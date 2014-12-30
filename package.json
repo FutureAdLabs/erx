@@ -1,0 +1,31 @@
+{
+  "name": "erx",
+  "version": "1.0.3",
+  "description": "Minimal observables",
+  "main": "index.js",
+  "scripts": {
+    "compile": "jsx --harmony --strip-types index.jsx | uglifyjs -c -m > index.js",
+    "lint": "flow",
+    "test": "mocha --compilers jsx:jsx",
+    "watch": "mocha --compilers jsx:jsx -w",
+    "prepublish": "npm run compile"
+  },
+  "author": "Bodil Stokke",
+  "license": "LGPL-3.0+",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bodil/erx"
+  },
+  "files": [
+    "index.js",
+    "README.md",
+    "COPYING",
+    "COPYING.LESSER"
+  ],
+  "devDependencies": {
+    "react-tools": "^0.12.2",
+    "uglify-js": "^2.4.16",
+    "jsx-require-extension": "^0.2.0",
+    "mocha": "^2.1.0"
+  }
+}
