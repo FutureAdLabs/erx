@@ -162,7 +162,12 @@
     observer: observer,
 
     // saner aliases
-    channel: observable
+    channel: observable,
+
+    // constructors
+    interval: (ms) => observable((sink) => {
+      setInterval(() => sink.value(Date.now()), ms);
+    })
   };
 
 })(module);
