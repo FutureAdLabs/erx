@@ -169,3 +169,9 @@ module.exports = {
     })}
 
 };
+
+try {
+  module.exports.Observable = Observable;
+  module.exports.Sink = Sink;
+  module.exports.Producer = Producer;
+} catch(e) {}
