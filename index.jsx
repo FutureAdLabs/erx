@@ -33,6 +33,11 @@ type Observable<A> = {
                 concat: (other: Observable<A>) => Observable<A>;
 };
 
+type Bus<A> = {
+  observable: Observable<A>;
+  push: (val: A) => void;
+};
+
 var isFn = (v) => typeof v === "function";
 var nop = function() {};
 
@@ -155,23 +160,39 @@ function observable<A>(producer: Producer<A>): Observable<A> {
     return me;
 }
 
+function bus(): Bus {
+  var sink = null;
+  var o = observable((s) => {
+    sink = s;
+    return () => { sink = null };
+  });
+  return {
+    observable: o,
+    push: function push<A>(val: A): void {
+      if (sink != null) sink.value(val);
+    }
+  };
+}
+
 module.exports = {
-    observable: observable,
-    Observer: Observer,
+  observable: observable,
+  Observer: Observer,
+  bus: bus,
 
-    // saner aliases
-    channel: observable,
+  // saner aliases
+  channel: observable,
 
-    // constructors
-    interval: function(ms: number): Observable<number>{
-      return observable((sink) => {
-        setInterval(() => sink.value(Date.now()), ms);
-    })}
-
+  // constructors
+  interval: function(ms: number): Observable<number>{
+    return observable((sink) => {
+      setInterval(() => sink.value(Date.now()), ms);
+    });
+  }
 };
 
 try {
   module.exports.Observable = Observable;
   module.exports.Sink = Sink;
   module.exports.Producer = Producer;
+  module.exports.Bus = Bus;
 } catch(e) {}

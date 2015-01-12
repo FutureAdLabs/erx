@@ -103,4 +103,13 @@ describe("observable", () => {
     var c2 = erx.channel((sink) => {sink.value(37); sink.close()});
     assertSeq(c1.concat(c2), [13, 37], done);
   });
+
+  it("pushes values over a bus", (done) => {
+    var b = erx.bus();
+    b.observable.subscribe((v) => {
+      assert.equal(v, 1337);
+      done();
+    });
+    b.push(1337);
+  });
 });
