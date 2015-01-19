@@ -112,4 +112,14 @@ describe("observable", () => {
     });
     b.push(1337);
   });
+
+  it("folds through a stream", (done) => {
+    var c = erx.channel((sink) => {
+        sink.value(37);
+    });
+    c.fold((acc, v) => { return acc + v }, 1300).subscribe((i) => {
+      assert.equal(i, 1337);
+      done();
+    })
+  });
 });

@@ -154,6 +154,22 @@ function observable<A>(producer: Producer<A>): Observable<A> {
                 });
                 return () => cur.unobserve(o);
             });
+        },
+
+        fold: (fun, seed) => {
+            var acc = seed;
+            return observable((sink) => {
+                var onValue = (val) => {
+                    acc = tryFn(fun.bind(this, acc), val, sink.value, sink.error);
+                }
+                var onError = (err) => {
+                    sink.error(err);
+                }
+                var onClose = () => {
+                    sink.close();
+                }
+                me.subscribe(onValue, onError, onClose);
+            })
         }
     };
 
