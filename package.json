@@ -1,10 +1,10 @@
 {
   "name": "erx",
-  "version": "1.0.3",
+  "version": "2.0.0",
   "description": "Minimal observables",
   "main": "index.js",
   "scripts": {
-    "compile": "jsx --harmony --strip-types index.jsx | uglifyjs -c -m > index.js",
+    "compile": "jsx --harmony --strip-types index.jsx | uglifyjs -b > index.js && jsx --harmony --strip-types dom.jsx | uglifyjs -b > dom.js",
     "lint": "flow",
     "test": "mocha --compilers jsx:jsx",
     "watch": "mocha --compilers jsx:jsx -w",
@@ -27,5 +27,8 @@
     "uglify-js": "^2.4.16",
     "jsx-require-extension": "^0.2.0",
     "mocha": "^2.1.0"
+  },
+  "dependencies": {
+    "asap": "^2.0.1"
   }
 }

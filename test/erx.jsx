@@ -2,7 +2,8 @@
 
 var assert = require("assert");
 
-var erx = require("../index.jsx");
+var erx = require("..");
+var asap = require("asap");
 
 describe("observable", () => {
   it("transmits values to observers", (done) => {
@@ -14,9 +15,9 @@ describe("observable", () => {
   });
 
   it("notifies observers on error", (done) => {
-    var c = erx.channel((sink) => sink.error("omg"));
+    var c = erx.channel((sink) => sink.error(new Error("omg")));
     c.subscribe(null, (err) => {
-      assert.equal(err, "omg");
+      assert.equal(err.message, "omg");
       done();
     });
   });
@@ -36,17 +37,16 @@ describe("observable", () => {
 
   it("calls free on error", (done) => {
     var c = erx.channel((sink) => {
-      process.nextTick(() => sink.error("omg"));
+      process.nextTick(() => sink.error(new Error("omg")));
       return done;
     });
-    c.subscribe();
+    c.subscribe(null, () => {});
   });
 
   it("calls free on unobserve", (done) => {
-    var c = erx.channel((sink) => {
-      return done;
-    });
-    c.unobserve(c.subscribe());
+    var c = erx.channel((sink) => done);
+    var o = c.subscribe();
+    asap(() => c.unobserve(o));
   });
 
   it("maps values through functions", (done) => {
@@ -102,5 +102,49 @@ describe("observable", () => {
     var c1 = erx.channel((sink) => {sink.value(13); sink.close()});
     var c2 = erx.channel((sink) => {sink.value(37); sink.close()});
     assertSeq(c1.concat(c2), [13, 37], done);
+  });
+
+  it("folds through a stream", (done) => {
+    var c = erx.channel((sink) => {
+        sink.value(37);
+    });
+    c.fold((acc, v) => { return acc + v }, 1300).subscribe((i) => {
+      assert.equal(i, 1337);
+      done();
+    })
+  });
+
+  it("take() caps a stream at the specified number", (done) => {
+    var c = erx.channel((sink) => {
+      sink.value(1); sink.value(2); sink.value(3); sink.value(4);
+      sink.close();
+    });
+    assertSeq(c.take(3), [1, 2, 3], done);
+  });
+
+  it("unpack() turns a stream of arrays of a into a stream of a", (done) => {
+    var c = erx.channel((sink) => {
+      sink.value([1,2]); sink.value([3,4]); sink.value([5, 6]);
+      sink.close();
+    });
+    assertSeq(erx.Observable.unpack(c), [1, 2, 3, 4, 5, 6], done);
+  });
+
+  it("flatMap() concatenates array results of a map properly", (done) => {
+    var c = erx.channel((sink) => {
+      sink.value(1); sink.value(2); sink.value(3);
+      sink.close();
+    });
+    assertSeq(c.flatMap((i) => [i, i * 2]), [1, 2, 2, 4, 3, 6], done);
+  });
+
+  it("distinct() filters out consecutive duplicates", (done) => {
+    var c = erx.channel((sink) => {
+      sink.value(1); sink.value(1); sink.value(1); sink.value(1);
+      sink.value(2); sink.value(2); sink.value(2);
+      sink.value(3); sink.value(3);
+      sink.close();
+    });
+    assertSeq(c.distinct(), [1, 2, 3], done);
   });
 });
