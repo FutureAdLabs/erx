@@ -17,6 +17,7 @@
     "url": "https://github.com/bodil/erx"
   },
   "files": [
+    "dom.js",
     "index.js",
     "README.md",
     "COPYING",
