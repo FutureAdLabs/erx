@@ -1,21 +1,23 @@
 /* @flow -*- mode: flow -*- */
 
-var erx = require(".");
+import * as erx from "./index";
 
 function now() {
-  var perf = typeof performance !== 'undefined' ? performance : null;
+  const perf = typeof window.performance !== "undefined" ? window.performance : null;
   return (
     perf && (perf.now || perf.webkitNow || perf.msNow ||
              perf.oNow || perf.mozNow) ||
         (process && process.hrtime && function() {
-          var t = process.hrtime();
+          const t = process.hrtime();
           return (t[0] * 1e9 + t[1]) / 1e6;
         }) || Date.now
   ).call(perf);
 }
 
-function animationFrame(): erx.Observable<number> {
-  var requestAnimFrame, cancelAnimFrame;
+export function animationFrame(): erx.Stream<number> {
+  let requestAnimFrame = function(cb) {
+    setTimeout(function() { cb(now()); }, 1000 / 60);
+  }, cancelAnimFrame = window.clearTimeout;
   if (window.requestAnimationFrame) {
     requestAnimFrame = window.requestAnimationFrame;
     cancelAnimFrame = window.cancelAnimationFrame;
@@ -31,20 +33,12 @@ function animationFrame(): erx.Observable<number> {
   } else if (window.oRequestAnimationFrame) {
     requestAnimFrame = window.oRequestAnimationFrame;
     cancelAnimFrame = window.oCancelAnimationFrame;
-  } else {
-    requestAnimFrame = function(cb) {
-      setTimeout(function() { cb(now()); }, 1000/60);
-    };
-    cancelAnimFrame = window.clearTimeout;
   }
-  return new erx.Observable((sink) => {
-    requestAnimFrame(function tick(t) {
+  return new erx.Stream((sink) => {
+    const handle = requestAnimFrame(function tick(t) {
       sink.value(t);
       requestAnimFrame(tick);
     });
+    return () => cancelAnimFrame(handle);
   });
 }
-
-module.exports = {
-  animationFrame
-};

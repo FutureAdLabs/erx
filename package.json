@@ -4,10 +4,9 @@
   "description": "Minimal observables",
   "main": "index.js",
   "scripts": {
-    "compile": "jsx --harmony --strip-types index.jsx | uglifyjs -b > index.js && jsx --harmony --strip-types dom.jsx | uglifyjs -b > dom.js",
-    "lint": "flow",
-    "test": "mocha --compilers jsx:jsx",
-    "watch": "mocha --compilers jsx:jsx -w",
+    "compile": "babel src --out-dir .",
+    "test": "mocha --compilers js:babel/register",
+    "watch": "mocha --compilers js:babel/register -w",
     "prepublish": "npm run compile"
   },
   "author": "Bodil Stokke",
@@ -24,10 +23,8 @@
     "COPYING.LESSER"
   ],
   "devDependencies": {
-    "react-tools": "^0.12.2",
-    "uglify-js": "^2.4.16",
-    "jsx-require-extension": "^0.2.0",
-    "mocha": "^2.1.0"
+    "mocha": "^2.1.0",
+    "babel": "^5.4.7"
   },
   "dependencies": {
     "asap": "^2.0.1"
