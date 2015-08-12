@@ -1,5 +1,6 @@
 /* @flow -*- mode: flow -*- */
 
+import Promise from "./promise";
 import asap from "asap";
 
 type Producer<A> = (sink: Sink<A>) => (void | () => void)
@@ -47,7 +48,7 @@ export class Observer<A> {
   }
 }
 
-export class Observable<A> {
+export class Observable<A> extends Promise<boolean> {
   observers: Array<Observer<A>>;
   freeFn: ?(() => void);
   closed: boolean;
@@ -55,6 +56,7 @@ export class Observable<A> {
   producer: Producer<A>;
 
   constructor(producer: Producer<A>) {
+    super();
     this.closed = false;
     this.observers = [];
     this.freeFn = null;
@@ -65,11 +67,17 @@ export class Observable<A> {
       (err) => asap(() => {
         this.observers.forEach((o) => o.error(err));
         this.cleanup();
+        if (!this.resolved) {
+          this.reject(err);
+        }
       }),
       () => asap(() => {
         this.closed = true;
         this.observers.forEach((o) => o.close());
         this.cleanup();
+        if (!this.resolved) {
+          this.resolve(true);
+        }
       })
     );
   }
