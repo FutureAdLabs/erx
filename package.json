@@ -1,6 +1,6 @@
 {
   "name": "erx",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "description": "Minimal observables",
   "main": "index.js",
   "scripts": {
