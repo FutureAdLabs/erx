@@ -18,6 +18,7 @@
   "files": [
     "dom.js",
     "index.js",
+    "promise.js",
     "README.md",
     "COPYING",
     "COPYING.LESSER"
