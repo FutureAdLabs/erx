@@ -294,6 +294,42 @@ describe("observable", () => {
     assertSeq(c, [1, 2, 3, 4, 5], doneThrice);
   });
 
+  it("Stream.zip() zips values good", (done) => {
+    const c1 = erx.stream((sink) => {
+      setTimeout(() => sink.value(1), 5);
+      setTimeout(() => sink.value(2), 15);
+      setTimeout(() => sink.value(3), 25);
+      setTimeout(() => sink.close(), 35);
+    });
+    const c2 = erx.stream((sink) => {
+      setTimeout(() => sink.value(1), 10);
+      setTimeout(() => sink.value(2), 20);
+      setTimeout(() => sink.value(3), 30);
+      setTimeout(() => sink.close(), 40);
+    });
+    assertSeq(c1.zip(c2, (a, b) => [a, b]), [
+      [1, null], [1, 1], [2, 1], [2, 2], [3, 2], [3, 3]
+    ], done);
+  });
+
+  it("Signal.zip() zips values just as good", (done) => {
+    const c1 = new erx.Signal(0, (sink) => {
+      setTimeout(() => sink.value(1), 5);
+      setTimeout(() => sink.value(2), 15);
+      setTimeout(() => sink.value(3), 25);
+      setTimeout(() => sink.close(), 35);
+    });
+    const c2 = new erx.Signal(0, (sink) => {
+      setTimeout(() => sink.value(1), 10);
+      setTimeout(() => sink.value(2), 20);
+      setTimeout(() => sink.value(3), 30);
+      setTimeout(() => sink.close(), 40);
+    });
+    assertSeq(c1.zip(c2, (a, b) => [a, b]), [
+      [0, 0], [1, 0], [1, 1], [2, 1], [2, 2], [3, 2], [3, 3]
+    ], done);
+  });
+
   it("Signal.sampleOn() samples the right values", function(done) {
     this.slow(400);
     const c = new erx.Signal(0, slowCounter);

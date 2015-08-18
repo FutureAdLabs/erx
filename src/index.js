@@ -201,6 +201,36 @@ export class Signal<A> extends Observable<A> {
       return () => this.unobserve(observer);
     });
   }
+
+  zip<B, C>(other: Signal<B>, select: (a: A, b: B) => C): Signal<C> {
+    const seed = [this.value, other.value];
+    return new Signal(select(seed[0], seed[1]), (sink) => {
+      let c: [any, any] = seed;
+      // Must ignore the first results from subscribing, as they're just
+      // the current values repeated. We already have them in the seed.
+      let ig: [boolean, boolean] = [false, false];
+      const unsub = () => { this.unobserve(o1); other.unobserve(o2); };
+      const onError = (err) => {
+        sink.error(err);
+        unsub();
+      };
+      const onClose = () => {
+        sink.close();
+        unsub();
+      };
+      const onValue = (i) => (val) => {
+        if (ig[i]) {
+          c[i] = val;
+          sink.value(select(c[0], c[1]));
+        } else {
+          ig[i] = true;
+        }
+      };
+      const o1 = this.subscribe(onValue(0), onError, onClose);
+      const o2 = other.subscribe(onValue(1), onError, onClose);
+      return unsub;
+    });
+  }
 }
 
 export class Stream<A> extends Observable<A> {
