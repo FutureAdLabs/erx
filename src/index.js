@@ -362,7 +362,7 @@ export class Stream<A> extends Observable<A> {
     });
   }
 
-  takeWhile<B>(pred: (value: A) => boolean): Stream<A> {
+  takeWhile(pred: (value: A) => boolean): Stream<A> {
     return new Stream((sink) => {
       const o = this.subscribe((v) => {
         if (pred(v)) {
