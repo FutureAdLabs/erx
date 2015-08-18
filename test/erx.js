@@ -12,6 +12,23 @@ function assertFreed(cons, done) {
   });
 }
 
+function assertSignalFreed(init, cons, done) {
+  return new erx.Signal(init, (sink) => {
+    cons(sink);
+    return done;
+  });
+}
+
+function doneX(times, done) {
+  let doneCount = 0;
+  return function() {
+    doneCount++;
+    if (doneCount >= times) {
+      done();
+    }
+  }
+}
+
 function counter(sink) {
   asap(() => sink.value(1));
   asap(() => sink.value(2));
@@ -19,6 +36,16 @@ function counter(sink) {
   asap(() => sink.value(4));
   asap(() => sink.value(5));
   asap(() => sink.close());
+}
+
+function slowCounter(sink) {
+  setTimeout(() => sink.value(1), 15);
+  setTimeout(() => sink.value(2), 40);
+  setTimeout(() => sink.value(3), 65);
+  setTimeout(() => sink.value(4), 90);
+  setTimeout(() => sink.value(5), 115);
+  setTimeout(() => sink.value(6), 140);
+  setTimeout(() => sink.close(), 160);
 }
 
 describe("observable", () => {
@@ -260,16 +287,66 @@ describe("observable", () => {
   });
 
   it("Observable.of() can be subscribed to by multiple observers", (done) => {
-    let doneCount = 0;
-    function doneThrice() {
-      doneCount++;
-      if (doneCount === 3) {
-        done();
-      }
-    }
+    const doneThrice = doneX(3, done);
     const c = erx.Stream.of([1, 2, 3, 4, 5]);
     assertSeq(c, [1, 2, 3, 4, 5], doneThrice);
     assertSeq(c, [1, 2, 3, 4, 5], doneThrice);
     assertSeq(c, [1, 2, 3, 4, 5], doneThrice);
+  });
+
+  it("Signal.sampleOn() samples the right values", function(done) {
+    this.slow(400);
+    const c = new erx.Signal(0, slowCounter);
+    assertSeq(c.sampleOn(erx.Stream.interval(50)), [0, 2, 4, 6], done);
+  });
+
+  it("Signal.sampleOn() samples the signal repeatedly", function(done) {
+    this.slow(100);
+    const c = new erx.Signal(5, (sink) => {
+      setTimeout(() => sink.close(), 45);
+    });
+    assertSeq(c.sampleOn(erx.Stream.interval(10)), [5, 5, 5, 5, 5], done);
+  });
+
+  it("two Signal.sampleOn()s can run on the same signal", function(done) {
+    this.slow(400);
+    const doneTwice = doneX(2, done);
+    const c = new erx.Signal(0, slowCounter);
+    assertSeq(c.sampleOn(erx.Stream.interval(50)), [0, 2, 4, 6], doneTwice);
+    assertSeq(c.sampleOn(erx.Stream.interval(50)), [0, 2, 4, 6], doneTwice);
+  });
+
+  it("Stream.sampleOn() samples the right values", function(done) {
+    this.slow(400);
+    const c = new erx.Stream(slowCounter);
+    assertSeq(c.sampleOn(erx.Stream.interval(50), 0), [0, 2, 4, 6], done);
+  });
+
+  it("Stream.sampleOn() samples the signal repeatedly", function(done) {
+    this.slow(100);
+    const c = new erx.Stream((sink) => {
+      setTimeout(() => sink.close(), 45);
+    });
+    assertSeq(c.sampleOn(erx.Stream.interval(10), 5), [5, 5, 5, 5, 5], done);
+  });
+
+  it("two Stream.sampleOn()s can run on the same stream", function(done) {
+    this.slow(400);
+    const doneTwice = doneX(2, done);
+    const c = new erx.Stream(slowCounter);
+    assertSeq(c.sampleOn(erx.Stream.interval(50), 0), [0, 2, 4, 6], doneTwice);
+    assertSeq(c.sampleOn(erx.Stream.interval(50), 0), [0, 2, 4, 6], doneTwice);
+  });
+
+  it("Signal.sampleOn() frees original stream", function(done) {
+    this.slow(400);
+    const c = assertSignalFreed(0, slowCounter, done);
+    c.sampleOn(erx.Stream.interval(50)).subscribe();
+  });
+
+  it("Stream.sampleOn() frees original stream", function(done) {
+    this.slow(400);
+    const c = assertFreed(slowCounter, done);
+    c.sampleOn(erx.Stream.interval(50)).subscribe();
   });
 });

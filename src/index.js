@@ -377,6 +377,10 @@ export class Stream<A> extends Observable<A> {
       };
     });
   }
+
+  sampleOn<B>(other: Observable<B>, seed: A): Signal<A> {
+    return this.fold((acc, next) => next, seed).sampleOn(other);
+  }
 }
 
 export class Bus<A> extends Stream<A> {
