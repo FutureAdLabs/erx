@@ -349,4 +349,22 @@ describe("observable", () => {
     const c = assertFreed(slowCounter, done);
     c.sampleOn(erx.Stream.interval(50)).subscribe();
   });
+
+  it("bus feeds values through", (done) => {
+    const b = erx.bus();
+    assertSeq(b, ["o", "m", "g"], done);
+    for (let i of "omg") {
+      b.push(i);
+    }
+    b.close();
+  });
+
+  it("property feeds values through", (done) => {
+    const b = erx.property("lol");
+    assertSeq(b, ["lol", "o", "m", "g"], done);
+    for (let i of "omg") {
+      b.set(i);
+    }
+    b.close();
+  });
 });

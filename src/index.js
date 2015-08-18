@@ -403,6 +403,22 @@ export class Bus<A> extends Stream<A> {
   }
 }
 
+export class Property<A> extends Signal<A> {
+  constructor(seed) {
+    super(seed, function() {});
+  }
+
+  set(val: A): void {
+    if (this.observers.length > 0) {
+      this.sink.value(val);
+    }
+  }
+
+  close(): void {
+    this.sink.close();
+  }
+}
+
 Stream.interval = function interval(ms: number): Stream<number> {
   return new Stream((sink) => {
     const i = setInterval(() => sink.value(typeof window !== "undefined" && window.performance !== undefined && window.performance.now !== undefined ? window.performance.now() : Date.now()), ms);
@@ -477,4 +493,8 @@ export function stream(f: Producer): Stream {
 
 export function bus(): Bus {
   return new Bus();
+}
+
+export function property(seed): Property {
+  return new Property(seed);
 }
