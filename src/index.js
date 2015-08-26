@@ -463,9 +463,15 @@ Stream.of = function of<A>(values: Array<A>): Stream<A> {
   });
 };
 
-Stream.unit = function of<A>(value: A): Stream<A> {
+Stream.unit = function unit<A>(value: A): Stream<A> {
   return Stream.of([value]);
 };
+
+Stream.wait = function wait(time: number): Stream<A> {
+  return new Stream((sink) => {
+    setTimeout(() => sink.close(), time);
+  });
+}
 
 export function stream(f: Producer): Stream {
   return new Stream(f);
