@@ -3,31 +3,7 @@
 import assert from "assert";
 import * as erx from "../src";
 import asap from "asap";
-import { assertSeq, assertSignal } from "./asserts";
-
-function assertFreed(cons, done) {
-  return erx.stream((sink) => {
-    cons(sink);
-    return done;
-  });
-}
-
-function assertSignalFreed(init, cons, done) {
-  return new erx.Signal(init, (sink) => {
-    cons(sink);
-    return done;
-  });
-}
-
-function doneX(times, done) {
-  let doneCount = 0;
-  return function() {
-    doneCount++;
-    if (doneCount >= times) {
-      done();
-    }
-  }
-}
+import { assertSeq, assertSignal, assertFreed, assertSignalFreed, doneX } from "./asserts";
 
 function counter(sink) {
   asap(() => sink.value(1));
