@@ -379,4 +379,15 @@ describe("observable", () => {
     }
     b.close();
   });
+  it("subscribe takes generators", (done) => {
+    const c = erx.stream(counter);
+    c.subscribe(function*() {
+      assert.equal(yield, 1);
+      assert.equal(yield, 2);
+      assert.equal(yield, 3);
+      assert.equal(yield, 4);
+      assert.equal(yield, 5);
+      done();
+    });
+  });
 });

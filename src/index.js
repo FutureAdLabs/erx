@@ -2,6 +2,7 @@
 
 import Promise from "./promise";
 import asap from "asap";
+import isGen from "./gentest";
 
 type Producer<A> = (sink: Sink<A>) => (void | () => void)
 
@@ -22,6 +23,16 @@ function tryFn<A, B>(fn: (val: A) => B, val: A, onValue: (val: B) => void, onErr
     return;
   }
   onValue(v);
+}
+
+function genToObs(fn) {
+  const gen = fn();
+  gen.next();
+  return new Observer(
+    v => gen.next(v),
+    e => gen.throw(e),
+    () => gen.return()
+  );
 }
 
 export class Sink<A> {
@@ -118,7 +129,7 @@ export class Observable<A> extends Promise<boolean> {
   }
 
   subscribe(onValue?: (v: A) => void, onError?: (e: Error) => void, onClose?: () => void): Observer<A> {
-    const o = new Observer(onValue, onError, onClose);
+    const o = isGen(onValue) ? genToObs(onValue) : new Observer(onValue, onError, onClose);
     this.observe(o);
     return o;
   }

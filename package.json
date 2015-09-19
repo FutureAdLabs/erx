@@ -17,6 +17,7 @@
   },
   "files": [
     "dom.js",
+    "gentest.js",
     "index.js",
     "promise.js",
     "README.md",
