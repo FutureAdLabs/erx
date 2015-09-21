@@ -3,7 +3,7 @@ const fnToStr = Function.prototype.toString;
 const isFnRegex = /^\s*function\*/;
 
 function isGen(fn) {
-  if (regeneratorRuntime) {
+  if (window.regeneratorRuntime) {
     /* global regeneratorRuntime */
     return regeneratorRuntime.isGeneratorFunction(fn);
   }
