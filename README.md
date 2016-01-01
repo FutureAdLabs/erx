@@ -3,7 +3,7 @@
 (pronounced *e-riks*)
 
 A minimal implementation of data channels for JS in the style of
-[Reactive Extensions](https://reactive-extensions.github.io/RxJS/).
+[Reactive Extensions](http://reactivex.io/).
 
 ## License
 
