@@ -1,5 +1,5 @@
 {
-  "name": "erx",
+  "name": "@adludio/erx",
   "version": "3.6.0",
   "description": "Minimal observables",
   "main": "index.js",
