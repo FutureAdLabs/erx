@@ -247,6 +247,14 @@ describe("observable", () => {
     assertSeq(c.take(9), [1, 2, 3, 1, 2, 3, 1, 2, 3], done);
   });
 
+  it("repeatFinite() repeats a stream a finite number of times", (done) => {
+    const f = () => erx.stream((sink) => {
+      sink.value(1); sink.value(2); sink.value(3); sink.close();
+    });
+    const c = erx.Stream.repeatFinite(f, 3);
+    assertSeq(c.take(12), [1, 2, 3, 1, 2, 3, 1, 2, 3], done);
+  });
+
   it("takeWhile() ends after the predicate fails", (done) => {
     const c = erx.stream(counter);
     assertSeq(c.takeWhile((i) => i < 4), [1, 2, 3], done);

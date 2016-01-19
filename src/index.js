@@ -515,6 +515,24 @@ Stream.repeat = function repeat<A>(factory: () => Stream<A>): Stream<A> {
   });
 };
 
+Stream.repeatFinite = function repeat<A>(factory: () => Stream<A>, iterations: number): Stream<A> {
+  return new Stream((sink) => {
+    let stream = null, o = null;
+    const start = (i, c) => {
+      stream = factory();
+      var onEnd = () => start(i, c + 1);
+
+      if(i === c + 1) {
+        onEnd = sink.close;
+      }
+
+      o = stream.subscribe(sink.value, sink.error, onEnd);
+    };
+    start(iterations, 0);
+    return () => stream.unobserve(o);
+  });
+};
+
 Stream.of = function of<A>(values: Array<A>): Stream<A> {
   return new Stream((sink) => {
     asap(() => {
