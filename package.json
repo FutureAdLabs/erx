@@ -1,6 +1,6 @@
 {
   "name": "@adludio/erx",
-  "version": "3.6.0",
+  "version": "3.6.1",
   "description": "Minimal observables",
   "main": "index.js",
   "scripts": {
