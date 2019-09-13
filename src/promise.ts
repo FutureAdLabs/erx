@@ -7,7 +7,7 @@
  */
 
  
-import asap = require("asap");
+const asap = require("asap")
 
 // const global = typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}
 

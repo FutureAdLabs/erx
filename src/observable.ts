@@ -1,6 +1,7 @@
 import Promise from "./promise"
 
-import asap = require("asap");
+const asap = require("asap")
+
 import { isGen, genToObs } from "./util/generator";
 import { tryFn } from "./util/fn";
 import { Signal, Stream } from "./stream";
@@ -33,7 +34,7 @@ export class Observer<A> {
   close: () => void;
 
   constructor(onValue?: (value: A) => void, onError?: (error: Error) => void, onClose?: () => void) {
-    this.value = () => {}
+    this.value = onValue || noop
     this.error = onError || rethrow;
     this.close = onClose || noop;
   }

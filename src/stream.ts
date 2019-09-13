@@ -1,5 +1,6 @@
 import { Observable, Observer, Producer } from "./observable";
 import Promise from "./promise"
+const asap = require("asap")
 import { tryFn } from "./util/fn";
 
 export class Signal<A> extends Observable<A> {
@@ -383,7 +384,6 @@ Stream.repeatFinite = function repeat<A>(factory: () => Stream<A>, iterations: n
 
 Stream.of = function of<A>(values: Array<A>): Stream<A> {
   return new Stream((sink) => {
-    // @ts-ignore
     asap(() => {
       values.forEach((v) => sink.value(v));
       sink.close();
