@@ -7,11 +7,10 @@
   ],
   "compilerOptions": {
     /* Basic Options */
-    "target": "es5", /* Specify ECMAScript target version: 'ES3' (default), 'ES5', 'ES2015', 'ES2016', 'ES2017', 'ES2018', 'ES2019' or 'ESNEXT'. */
+    "target": "ES2015", /* Specify ECMAScript target version: 'ES3' (default), 'ES5', 'ES2015', 'ES2016', 'ES2017', 'ES2018', 'ES2019' or 'ESNEXT'. */
     "lib": [
       "es2015",
-      "dom",      
-      "es2015.generator"
+      "dom"
     ], /* Specify library files to be included in the compilation. */
     "declaration": true, /* Generates corresponding '.d.ts' file. */
     "outDir": ".", /* Redirect output structure to the directory. */
