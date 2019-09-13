@@ -1,8 +1,7 @@
-/*global describe, it */
-
-import assert from "assert";
+import { assert } from "chai";
 import * as erx from "../src";
-import asap from "asap";
+
+import asap = require("asap");
 import { assertSeq, assertSignal, assertFreed, assertSignalFreed, doneX } from "./asserts";
 
 function counter(sink) {
@@ -156,7 +155,7 @@ describe("observable", () => {
 
   it("fold() frees original stream", (done) => {
     const c = assertFreed(counter, done);
-    c.fold((a, n) => 0).subscribe();
+    c.fold((a, n) => 0, 2).subscribe();
   });
 
   it("take() caps a stream at the specified number", (done) => {
@@ -367,7 +366,7 @@ describe("observable", () => {
   it("Stream.sampleOn() frees original stream", function(done) {
     this.slow(400);
     const c = assertFreed(slowCounter, done);
-    c.sampleOn(erx.Stream.interval(50)).subscribe();
+    c.sampleOn(erx.Stream.interval(50), null).subscribe();
   });
 
   it("bus feeds values through", (done) => {

@@ -1,172 +1,8 @@
-/* @flow -*- mode: flow -*- */
-
-import Promise from "./promise";
-import asap from "asap";
-import isGen from "./gentest";
-
-type Producer<A> = (sink: Sink<A>) => (void | () => void)
-
-const isFn = (v) => typeof v === "function";
-const nop = function() {};
-
-function rethrow(err: Error): void {
-  console.error("Uncaught error on erx.Observer!");
-  throw err;
-}
-
-function tryFn<A, B>(fn: (val: A) => B, val: A, onValue: (val: B) => void, onError: (err: Error) => void) {
-  let v;
-  try {
-    v = fn(val);
-  } catch(e) {
-    onError(e);
-    return;
-  }
-  onValue(v);
-}
-
-function genToObs(fn) {
-  const gen = fn();
-  gen.next();
-  return new Observer(
-    v => gen.next(v),
-    e => gen.throw(e),
-    () => gen.return()
-  );
-}
-
-export class Sink<A> {
-  value: (value: A) => void;
-  error: (error: Error) => void;
-  close: () => void;
-
-  constructor(value: (v: A) => void, error: (e: Error) => void, close: () => void) {
-    this.value = value;
-    this.error = error;
-    this.close = close;
-  };
-}
-
-export class Observer<A> {
-  value: (value: A) => void;
-  error: (error: Error) => void;
-  close: () => void;
-
-  constructor(onValue?: (value: A) => void, onError?: (error: Error) => void, onClose?: () => void): void {
-    this.value = onValue || nop;
-    this.error = onError || rethrow;
-    this.close = onClose || nop;
-  }
-}
-
-export class Observable<A> extends Promise<boolean> {
-  observers: Array<Observer<A>>;
-  freeFn: ?(() => void);
-  closed: boolean;
-  sink: Sink<A>;
-  producer: Producer<A>;
-
-  constructor(producer: Producer<A>) {
-    super();
-    this.closed = false;
-    this.observers = [];
-    this.freeFn = null;
-    this.producer = producer;
-
-    this.sink = new Sink(
-      (value) => asap(() => this.observers.forEach((o) => o.value(value))),
-      (err) => asap(() => {
-        this.observers.forEach((o) => o.error(err));
-        this.cleanup();
-        if (!this.resolved) {
-          this.reject(err);
-        }
-      }),
-      () => asap(() => {
-        this.closed = true;
-        this.observers.forEach((o) => o.close());
-        this.cleanup();
-        if (!this.resolved) {
-          this.resolve(true);
-        }
-      })
-    );
-  }
-
-  produce(): void {
-    this.freeFn = this.producer(this.sink);
-  }
-
-  free(): void {
-    if (this.freeFn) {
-      this.freeFn();
-    }
-  }
-
-  cleanup(): void {
-    this.free();
-    this.observers = [];
-  }
-
-  observe(o: Observer<A>): void {
-    if (this.closed) { throw new Error("Cannot subscribe to a closed stream."); }
-    const fresh = this.observers.length === 0;
-    this.observers.push(o);
-    if (fresh) {
-      asap(() => this.produce());
-    }
-  }
-
-  unobserve(o: any): void { // FIXME Flow won't accept o: Observer<A> for some unknown reason
-    const i = this.observers.indexOf(o);
-    if (i >= 0) {
-      this.observers = this.observers.slice(0, i).concat(this.observers.slice(i + 1));
-      if (this.observers.length === 0) {
-        this.free();
-        this.freeFn = null;
-      }
-    }
-  }
-
-  subscribe(onValue?: (v: A) => void, onError?: (e: Error) => void, onClose?: () => void): Observer<A> {
-    const o = isGen(onValue) ? genToObs(onValue) : new Observer(onValue, onError, onClose);
-    this.observe(o);
-    return o;
-  }
-
-  fold<B>(fun: (acc: B, next: A) => B, seed: B): Signal<B> {
-    let acc = seed;
-    return new Signal(seed, (sink) => {
-      const onValue = (val) => {
-        const accumulate = (val) => {
-          acc = val;
-          sink.value(val);
-        };
-        tryFn(fun.bind(this, acc), val, accumulate, sink.error);
-      };
-      const o = this.subscribe(onValue, sink.error, sink.close);
-      return () => this.unobserve(o);
-    });
-  }
-
-  scan<B>(fun: (acc: B, next: A) => B, seed: B): Stream<B> {
-    let acc = seed;
-    return new Stream((sink) => {
-      const onValue = (val) => {
-        const accumulate = (val) => {
-          acc = val;
-          sink.value(val);
-        };
-        tryFn(fun.bind(this, acc), val, accumulate, sink.error);
-      };
-      const o = this.subscribe(onValue, sink.error, sink.close);
-      return () => this.unobserve(o);
-    });
-  }
-}
+import { Observable, Observer, Producer } from "./observable";
+import Promise from "./promise"
+import { tryFn } from "./util/fn";
 
 export class Signal<A> extends Observable<A> {
-  value: A;
 
   constructor(value: A, producer: Producer<A>) {
     super(producer);
@@ -214,14 +50,14 @@ export class Signal<A> extends Observable<A> {
   }
 
   zip<B, C>(other: Signal<B>, select: (a: A, b: B) => C): Signal<C> {
-    const seed = [this.value, other.value];
+    const seed: [ A, B ] = [this.value, other.value];
     return new Signal(select(seed[0], seed[1]), (sink) => {
       let c: [any, any] = seed;
       // Must ignore the first results from subscribing, as they're just
       // the current values repeated. We already have them in the seed.
       let ig: [boolean, boolean] = [false, false];
       const unsub = () => { this.unobserve(o1); other.unobserve(o2); };
-      const onError = (err) => {
+      const onError = (err: Error) => {
         sink.error(err);
         unsub();
       };
@@ -229,7 +65,7 @@ export class Signal<A> extends Observable<A> {
         sink.close();
         unsub();
       };
-      const onValue = (i) => (val) => {
+      const onValue = (i: number) => (val: any) => {
         if (ig[i]) {
           c[i] = val;
           sink.value(select(c[0], c[1]));
@@ -245,10 +81,22 @@ export class Signal<A> extends Observable<A> {
 }
 
 export class Stream<A> extends Observable<A> {
+
+  static interval: (ms: number) => Stream<number>;
+  static tick: (ms: number) => Stream<number>;
+  static unpack: <A>(o: Stream<A[]>) => Stream<A>;
+  static mergeAll: <A>(os: Stream<A>[]) => Stream<A>;
+  static concatAll: <A>(os: Stream<A>[]) => Stream<A>;
+  static repeat: <A>(factory: () => Stream<A>) => Stream<A>;
+  static repeatFinite: <A>(factory: () => Stream<A>, iterations: number) => Stream<A>;
+  static of: <A>(values: A[]) => Stream<A>;
+  static unit: <A>(value: A) => Stream<A>;
+  static wait: (time: number) => Stream<any>;
+
   map<B>(f: (a: A) => B): Stream<B> {
     return new Stream((sink) => {
       const o = this.subscribe((val) => tryFn(f, val, sink.value, sink.error),
-                               sink.error, sink.close);
+        sink.error, sink.close);
       return () => this.unobserve(o);
     });
   }
@@ -268,11 +116,11 @@ export class Stream<A> extends Observable<A> {
     return new Stream((sink) => {
       let c = [false, false];
       const unsub = () => { this.unobserve(o1); this.unobserve(o2); };
-      const onError = (err) => {
+      const onError = (err: Error) => {
         sink.error(err);
         unsub();
       };
-      const onClose = (i) => () => {
+      const onClose = (i: number) => () => {
         c[i] = true;
         if (c[0] && c[1]) {
           sink.close();
@@ -287,7 +135,7 @@ export class Stream<A> extends Observable<A> {
 
   concat(other: Stream<A>): Stream<A> {
     return new Stream((sink) => {
-      let cur = this;
+      let cur: Stream<A> = this;
       let o = this.subscribe(sink.value, sink.error, () => {
         this.unobserve(o);
         cur = other;
@@ -301,7 +149,7 @@ export class Stream<A> extends Observable<A> {
     return new Stream((sink) => {
       let c: [any, any] = [null, null];
       const unsub = () => { this.unobserve(o1); other.unobserve(o2); };
-      const onError = (err) => {
+      const onError = (err: Error) => {
         sink.error(err);
         unsub();
       };
@@ -309,7 +157,7 @@ export class Stream<A> extends Observable<A> {
         sink.close();
         unsub();
       };
-      const onValue = (i) => (val) => {
+      const onValue = (i: number) => (val: any) => {
         c[i] = val;
         sink.value(select(c[0], c[1]));
       };
@@ -323,7 +171,7 @@ export class Stream<A> extends Observable<A> {
     return new Stream((sink) => {
       let c: [any, any] = [null, null];
       const unsub = () => { this.unobserve(o1); other.unobserve(o2); };
-      const onError = (err) => {
+      const onError = (err: Error) => {
         sink.error(err);
         unsub();
       };
@@ -331,7 +179,7 @@ export class Stream<A> extends Observable<A> {
         sink.close();
         unsub();
       };
-      const onValue = (i) => (val) => {
+      const onValue = (i: number) => (val: any) => {
         c[i] = val;
         if (i === 0) {
           sink.value(select(c[0], c[1]));
@@ -366,7 +214,7 @@ export class Stream<A> extends Observable<A> {
 
   distinct(): Stream<A> {
     return new Stream((sink) => {
-      let current;
+      let current: A;
       const observer = this.subscribe((val) => {
         if (val !== current) {
           sink.value(val);
@@ -379,7 +227,7 @@ export class Stream<A> extends Observable<A> {
 
   delay(ms: number): Stream<A> {
     return new Stream((sink) => {
-      const delay = (f) => (v) => setTimeout(() => f(v), ms);
+      const delay = (f: Function) => (v?: A | Error) => setTimeout(() => f(v), ms);
       const observer = this.subscribe(
         delay(sink.value),
         delay(sink.error),
@@ -426,7 +274,7 @@ export class Stream<A> extends Observable<A> {
 
 export class Bus<A> extends Stream<A> {
   constructor() {
-    super(function() {});
+    super(function () { });
   }
 
   push(val: A): void {
@@ -445,8 +293,8 @@ export class Bus<A> extends Stream<A> {
 }
 
 export class Property<A> extends Signal<A> {
-  constructor(seed) {
-    super(seed, function() {});
+  constructor(seed: A) {
+    super(seed, () => {});
   }
 
   set(val: A): void {
@@ -478,7 +326,7 @@ Stream.tick = function interval(ms: number): Stream<number> {
 Stream.unpack = function unpack<A>(o: Stream<Array<A>>): Stream<A> {
   return new Stream((sink) => {
     const observer = o.subscribe((val) => val.forEach((i) => sink.value(i)),
-                                 sink.error, sink.close);
+      sink.error, sink.close);
     return () => o.unobserve(observer);
   });
 };
@@ -505,7 +353,7 @@ Stream.concatAll = function concatAll<A>(os: Array<Stream<A>>): Stream<A> {
 
 Stream.repeat = function repeat<A>(factory: () => Stream<A>): Stream<A> {
   return new Stream((sink) => {
-    let stream = null, o = null;
+    let stream: Stream<A>, o: Observer<A>;
     const start = () => {
       stream = factory();
       o = stream.subscribe(sink.value, sink.error, start);
@@ -517,12 +365,12 @@ Stream.repeat = function repeat<A>(factory: () => Stream<A>): Stream<A> {
 
 Stream.repeatFinite = function repeat<A>(factory: () => Stream<A>, iterations: number): Stream<A> {
   return new Stream((sink) => {
-    let stream = null, o = null;
-    const start = (i, c) => {
+    let stream: Stream<A>, o: Observer<A>;
+    const start = (i: number, c: number) => {
       stream = factory();
       var onEnd = () => start(i, c + 1);
 
-      if(i === c + 1) {
+      if (i === c + 1) {
         onEnd = sink.close;
       }
 
@@ -535,6 +383,7 @@ Stream.repeatFinite = function repeat<A>(factory: () => Stream<A>, iterations: n
 
 Stream.of = function of<A>(values: Array<A>): Stream<A> {
   return new Stream((sink) => {
+    // @ts-ignore
     asap(() => {
       values.forEach((v) => sink.value(v));
       sink.close();
@@ -546,20 +395,20 @@ Stream.unit = function unit<A>(value: A): Stream<A> {
   return Stream.of([value]);
 };
 
-Stream.wait = function wait(time: number): Stream<A> {
+Stream.wait = function wait(time: number): Stream<void> {
   return new Stream((sink) => {
     setTimeout(() => sink.close(), time);
   });
 }
 
-export function stream(f: Producer): Stream {
+export function stream(f: Producer<any>): Stream<any> {
   return new Stream(f);
 }
 
-export function bus(): Bus {
+export function bus(): Bus<any> {
   return new Bus();
 }
 
-export function property(seed): Property {
-  return new Property(seed);
+export function property(seed: any): Property<any> {
+  return new Property(seed)
 }

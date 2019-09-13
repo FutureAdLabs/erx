@@ -1,4 +1,4 @@
-import assert from "assert";
+import { assert } from "chai";
 import * as erx from "../src";
 
 export function assertSeq(c, expected, done) {
