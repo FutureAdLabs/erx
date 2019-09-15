@@ -5,7 +5,7 @@
   "scripts": {
     "prepublishOnly": "npm run test",
     "prepare": "npm run build",
-    "build": "npm run cleanup && tsc && npm run generate-flow-defs",
+    "build": "npm run cleanup && babel src --out-dir . --extensions '.ts' --source-maps inline && tsc --emitDeclarationOnly && npm run generate-flow-defs",
     "cleanup": "rimraf ./*.d.ts ./*.js ./*.js.flow ./util",
     "generate-flow-defs": "flowgen --add-flow-header ./ && copyfiles -u 1 -V 'exports/**/*.flow' . && rm -rf exports",
     "test:cover": "nyc --reporter=lcov --reporter=text mocha test/* --require ts-node/register --exit",
@@ -33,7 +33,9 @@
   "devDependencies": {
     "@babel/cli": "^7.6.0",
     "@babel/core": "^7.6.0",
+    "@babel/plugin-proposal-class-properties": "^7.5.5",
     "@babel/preset-env": "^7.6.0",
+    "@babel/preset-typescript": "^7.6.0",
     "@types/asap": "^2.0.0",
     "@types/chai": "^4.2.2",
     "@types/mocha": "^5.2.7",

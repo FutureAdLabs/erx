@@ -1,13 +1,19 @@
 {
   "presets": [
+    "@babel/preset-typescript",
     [
       "@babel/env",
       {
         "targets": {
-          "node": "10.15"
+          "browsers": [
+            "last 2 versions",
+            "ie >= 8"
+          ]
         }
       }
-    ],
-    "@babel/preset-typescript",
+    ]
+  ],
+  "plugins": [
+    "@babel/plugin-proposal-class-properties"
   ]
 }
