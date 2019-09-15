@@ -5,6 +5,7 @@
 lib
 exports
 /*.js
+/*.js.flow
 /*.d.ts
 util
 .DS_Store
