@@ -4,8 +4,9 @@
   "description": "Minimal observables",
   "scripts": {
     "prepublishOnly": "npm run test && npm run build",
-    "build": "rm -rf lib && tsc && npm run generate-flow-defs",
-    "generate-flow-defs": "flowgen --add-flow-header lib/ && copyfiles -u 1 -V 'exports/**/*.flow' lib && rm -rf exports",
+    "build": "npm run cleanup && tsc && npm run generate-flow-defs",
+    "cleanup": "rimraf ./*.d.ts ./*.js ./util",
+    "generate-flow-defs": "flowgen --add-flow-header lib/ && copyfiles -u 1 -V 'exports/**/*.flow' . && rm -rf exports",
     "test:cover": "nyc --reporter=lcov --reporter=text mocha test/* --require ts-node/register --exit",
     "test:ci": "nyc mocha test/* --require ts-node/register  --reporter mocha-junit-reporter --exit --reporter-options mochaFile=reports/test-results.xml",
     "test": "mocha test/* --require ts-node/register --exit",
@@ -20,7 +21,10 @@
   },
   "homepage": "https://github.com/futureadlabs/fsm#readme",
   "files": [
-    "lib",
+    "*.js",
+    "*.d.ts",
+    "*.js.flow",
+    "util",
     "README.md",
     "COPYING",
     "COPYING.LESSER"
@@ -41,6 +45,7 @@
     "flowgen": "^1.10.0",
     "mocha": "^6.2.0",
     "nyc": "^14.1.1",
+    "rimraf": "^3.0.0",
     "sinon": "^7.4.2",
     "sinon-chai": "^3.3.0",
     "ts-node": "^8.3.0",

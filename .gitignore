@@ -4,3 +4,6 @@
 /dom.js
 lib
 exports
+/*.js
+/*.d.ts
+util
