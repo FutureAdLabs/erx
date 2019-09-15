@@ -7,3 +7,4 @@ exports
 /*.js
 /*.d.ts
 util
+.DS_Store
