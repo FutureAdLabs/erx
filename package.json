@@ -3,7 +3,8 @@
   "version": "3.6.1",
   "description": "Minimal observables",
   "scripts": {
-    "prepublishOnly": "npm run test && npm run build",
+    "prepublishOnly": "npm run test",
+    "prepare": "npm run build",
     "build": "npm run cleanup && tsc && npm run generate-flow-defs",
     "cleanup": "rimraf ./*.d.ts ./*.js ./util",
     "generate-flow-defs": "flowgen --add-flow-header ./ && copyfiles -u 1 -V 'exports/**/*.flow' . && rm -rf exports",
