@@ -115,19 +115,22 @@ export class Observable<A> extends Promise<A> {
     return o;
   }
 
-  fold<B>(fun: (acc: B, next: A) => B, seed: B): Signal<B> {
+  fold<B>(fun: (acc: B, next: A, signal: Signal<B>) => B, seed: B): Signal<B> {
     let acc = seed;
-    return new Signal(seed, (sink) => {
+
+    let signal = new Signal(seed, (sink) => {
       const onValue = (val: any) => {
         const accumulate = (val: any) => {
           acc = val;
           sink.value(val);
         };
-        tryFn(fun.bind(this, acc), val, accumulate, sink.error);
+        tryFn(fun.bind(this, acc, val), signal, accumulate, sink.error);
       };
       const o = this.subscribe(onValue, sink.error, sink.close);
       return () => this.unobserve(o);
     });
+
+    return signal
   }
 
   scan<B>(fun: (acc: B, next: A) => B, seed: B): Stream<B> {
