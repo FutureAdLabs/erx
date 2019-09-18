@@ -324,7 +324,8 @@ describe("observable", () => {
     const c = new erx.Signal(5, (sink) => {
       setTimeout(() => sink.close(), 45);
     });
-    assertSeq(c.sampleOn(erx.Stream.interval(10)), [5, 5, 5, 5, 5], done);
+
+    assertSeq(c.sampleOn(erx.Stream.interval(16)), [5, 5, 5], done);
   });
 
   it("two Signal.sampleOn()s can run on the same signal", function(done) {
@@ -346,7 +347,7 @@ describe("observable", () => {
     const c = new erx.Stream((sink) => {
       setTimeout(() => sink.close(), 45);
     });
-    assertSeq(c.sampleOn(erx.Stream.interval(10), 5), [5, 5, 5, 5, 5], done);
+    assertSeq(c.sampleOn(erx.Stream.interval(16), 5), [5, 5, 5], done);
   });
 
   it("two Stream.sampleOn()s can run on the same stream", function(done) {
