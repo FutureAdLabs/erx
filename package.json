@@ -1,6 +1,6 @@
 {
   "name": "@adludio/erx",
-  "version": "3.6.1",
+  "version": "4.0.0",
   "description": "Minimal observables",
   "scripts": {
     "prepublishOnly": "npm run test",
