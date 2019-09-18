@@ -2,3 +2,10 @@
 /index.js
 /node_modules/
 /dom.js
+lib
+exports
+/*.js
+/*.js.flow
+/*.d.ts
+util
+.DS_Store
